@@ -168,56 +168,48 @@ class Game:
 
 
             if self.show_instructions:
+                # Scroll kontrolleri
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_SPACE:
-                        self.show_instructions = False
-                        self.reset_game()
-                        self.tutorial_active = True
-                    elif event.key in (pygame.K_DOWN, pygame.K_s):
+                    if event.key in (pygame.K_DOWN, pygame.K_s):
                         self.instructions_scroll += 40
+                        continue
                     elif event.key in (pygame.K_UP, pygame.K_w):
-                        self.instructions_scroll -= 40
-                        if self.instructions_scroll < 0:
-                            self.instructions_scroll = 0
-                elif event.type == pygame.MOUSEWHEEL:
-                    self.instructions_scroll -= event.y * 40
-                    if self.instructions_scroll < 0:
-                        self.instructions_scroll = 0
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        # Alt 80px bölgeye tıklama = BAŞLAT
-                        if event.pos[1] > constants.SCREEN_HEIGHT - 80:
-                            self.show_instructions = False
-                            self.reset_game()
-                            self.tutorial_active = True
-                        elif event.pos[1] > constants.SCREEN_HEIGHT // 2:
-                            self.instructions_scroll += 60
-                        else:
-                            self.instructions_scroll = max(0, self.instructions_scroll - 60)
-                elif event.type == pygame.FINGERDOWN:
-                    # Dokunma ile de başlat (ekranın altına dokunursa)
-                    if event.y > 0.9:  # normalized, alt %10
-                        self.show_instructions = False
-                        self.reset_game()
-                        self.tutorial_active = True
-                    else:
-                        self._touch_last_y = event.y
-                elif event.type == pygame.FINGERMOTION:
+                        self.instructions_scroll = max(0, self.instructions_scroll - 40)
+                        continue
+                if event.type == pygame.MOUSEWHEEL:
+                    self.instructions_scroll = max(0, self.instructions_scroll - event.y * 40)
+                    continue
+                if event.type == pygame.FINGERMOTION:
                     if self._touch_last_y is not None:
                         dy = (self._touch_last_y - event.y) * constants.SCREEN_HEIGHT
-                        self.instructions_scroll += int(dy)
-                        if self.instructions_scroll < 0:
-                            self.instructions_scroll = 0
+                        self.instructions_scroll = max(0, self.instructions_scroll + int(dy))
                         self._touch_last_y = event.y
-                elif event.type == pygame.FINGERUP:
+                    continue
+                if event.type == pygame.FINGERDOWN:
+                    self._touch_last_y = event.y
+                    continue
+                if event.type == pygame.FINGERUP:
                     self._touch_last_y = None
+                    continue
+                # Herhangi bir tıklama veya SPACE = Instructions'ı kapat, tutorial başlat
+                _start = False
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    _start = True
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    _start = True
+                if _start:
+                    self.show_instructions = False
+                    self.reset_game()
+                    self.tutorial_active = True
                 continue
 
             if self.tutorial_active:
-                _space = (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE)
-                _click = (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1)
-                _touch = (event.type == pygame.FINGERDOWN)
-                if _space or _click or _touch:
+                _interact = (
+                    (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE) or
+                    event.type == pygame.MOUSEBUTTONDOWN or
+                    event.type == pygame.FINGERDOWN
+                )
+                if _interact:
                     if self.tutorial_phase == "intro":
                         self.tutorial_phase = "playing"
                         self.tutorial_step = 0
