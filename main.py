@@ -48,6 +48,7 @@ class Game:
         self.level_up_timer = 0.0 # Legacy level up msg
         self.notification_timer = 0.0
         self.notification_msg = ""
+        self.step_timer = 0.0
         self.unlocked_notifs = {3: False, 5: False}
 
         # Shop
@@ -107,6 +108,7 @@ class Game:
         self.unlocked_notifs = {3: False, 5: False}
         self.game_over = False
         self.game_state = "PLAYING"
+        self.step_timer = 0.0
         
         # Reset Entities
         self.player = Player()
@@ -206,6 +208,7 @@ class Game:
                         # Toggle Shop or Trash
                         if abs(self.player.x - constants.STORAGE_X) < 120 and abs(self.player.y - constants.STORAGE_Y) < 120:
                             self.shop_open = not self.shop_open
+                            self.sound_manager.play("shop_open" if self.shop_open else "shop_close")
                         elif abs(self.player.x - constants.TRASH_X) < 120 and abs(self.player.y - constants.TRASH_Y) < 120:
                             self._handle_interaction()
                         else:
@@ -290,6 +293,7 @@ class Game:
                 self.player.carrot_seeds = 5
                 self.player.items.clear()
                 self.player.items.append("SEED")
+                self.sound_manager.play("buy")
             self.tutorial_wait += dt
             if self.tutorial_wait > 0.8:
                 self.tutorial_wait = 0.0
@@ -303,6 +307,7 @@ class Game:
                         self.crops.append(Crop(px, py, FoodType.CARROT))
                         self.player.carrot_seeds -= 1
                 self.player.items.clear()  # Tohum kafadan kalksın
+                self.sound_manager.play("plant")
             self.tutorial_wait += dt
             if self.tutorial_wait > 1.0:
                 self.tutorial_wait = 0.0
@@ -324,6 +329,7 @@ class Game:
                         self.crops.remove(crop)
                         self.player.items.clear()
                         self.player.items.append("CARROT")
+                        self.sound_manager.play("harvest_carrot")
                         break
             self.tutorial_wait += dt
             if self.tutorial_wait > 0.5:
@@ -334,6 +340,7 @@ class Game:
                 if "CARROT" in self.player.items and self.horses:
                     self.horses[0].receive_food(FoodType.CARROT)
                     self.player.items.clear()
+                    self.sound_manager.play("feed")
                     self.tutorial_feed_count += 1
                     if not self.poops:
                         self.poops.append(Poop(self.horses[0].x + 100, self.horses[0].y + 10))
@@ -347,6 +354,7 @@ class Game:
                     self.poops.pop(0)
                     self.player.items.clear()
                     self.player.items.append("POOP")
+                    self.sound_manager.play("poop_collect")
             self.tutorial_wait += dt
             if self.tutorial_wait > 0.6:
                 self.tutorial_wait = 0.0
@@ -356,6 +364,7 @@ class Game:
                 if "POOP" in self.player.items:
                     self.player.items.clear()
                     self.player.coins += constants.POOP_VALUE
+                    self.sound_manager.play("coin")
             self.tutorial_wait += dt
             if self.tutorial_wait > 1.2:
                 self.tutorial_wait = 0.0
@@ -641,6 +650,7 @@ class Game:
         if new_lvl > self.level:
             self.level = new_lvl
             self.player.coins += 25
+            self.sound_manager.play("level_up")
             # Reset horses to adapt to new level parameters
             for h in self.horses:
                 h.reset(self.level)
@@ -662,6 +672,15 @@ class Game:
             self.level_up_timer -= dt
             
         self.player.move(pygame.key.get_pressed(), dt)
+        keys = pygame.key.get_pressed()
+        if any(keys[k] for k in (pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d,
+                                   pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT)):
+            self.step_timer -= dt
+            if self.step_timer <= 0:
+                self.sound_manager.play("step")
+                self.step_timer = 0.35
+        else:
+            self.step_timer = 0.0
         for crop in self.crops: crop.update(dt)
         for tree in self.apple_trees: tree.update(dt)
         for horse in self.horses: horse.update(dt)
