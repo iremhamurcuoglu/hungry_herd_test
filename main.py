@@ -171,8 +171,8 @@ class Game:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
                         self.show_instructions = False
-                        self.reset_game()  # Oyun varlıklarını yükle
-                        self.tutorial_active = True  # Tutorial başlatılırken de varlıklar hazır olsun
+                        self.reset_game()
+                        self.tutorial_active = True
                     elif event.key in (pygame.K_DOWN, pygame.K_s):
                         self.instructions_scroll += 40
                     elif event.key in (pygame.K_UP, pygame.K_w):
@@ -184,14 +184,24 @@ class Game:
                     if self.instructions_scroll < 0:
                         self.instructions_scroll = 0
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # Ekranın alt yarısına tıklayınca aşağı, üst yarısına tıklayınca yukarı
                     if event.button == 1:
-                        if event.pos[1] > constants.SCREEN_HEIGHT // 2:
+                        # Alt 80px bölgeye tıklama = BAŞLAT
+                        if event.pos[1] > constants.SCREEN_HEIGHT - 80:
+                            self.show_instructions = False
+                            self.reset_game()
+                            self.tutorial_active = True
+                        elif event.pos[1] > constants.SCREEN_HEIGHT // 2:
                             self.instructions_scroll += 60
                         else:
                             self.instructions_scroll = max(0, self.instructions_scroll - 60)
                 elif event.type == pygame.FINGERDOWN:
-                    self._touch_last_y = event.y  # normalized 0-1
+                    # Dokunma ile de başlat (ekranın altına dokunursa)
+                    if event.y > 0.9:  # normalized, alt %10
+                        self.show_instructions = False
+                        self.reset_game()
+                        self.tutorial_active = True
+                    else:
+                        self._touch_last_y = event.y
                 elif event.type == pygame.FINGERMOTION:
                     if self._touch_last_y is not None:
                         dy = (self._touch_last_y - event.y) * constants.SCREEN_HEIGHT
@@ -204,19 +214,22 @@ class Game:
                 continue
 
             if self.tutorial_active:
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                _space = (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE)
+                _click = (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1)
+                _touch = (event.type == pygame.FINGERDOWN)
+                if _space or _click or _touch:
                     if self.tutorial_phase == "intro":
                         self.tutorial_phase = "playing"
                         self.tutorial_step = 0
                         self.tutorial_wait = 0.0
                         self.tutorial_feed_count = 0
                         self.reset_game()
-                        self.sound_manager.start_music()  # Tutorial müzik başlat
+                        self.sound_manager.start_music()
                     elif self.tutorial_phase == "outro":
                         self.tutorial_active = False
                         self.sound_manager.stop_music()
                         self.reset_game()
-                        self.sound_manager.start_music()  # Normal oyun müziği
+                        self.sound_manager.start_music()
                     elif self.tutorial_phase == "playing":
                         step = self.tutorial_steps[self.tutorial_step]
                         if step["action"] == "done":
@@ -408,7 +421,7 @@ class Game:
             self.screen.blit(s, r)
             y += 32
         # Devam
-        info = self.font_small.render("[SPACE] Demo'yu Başlat", True, (255, 255, 100))
+        info = self.font_small.render("[SPACE] veya Tıkla → Demo'yu Başlat", True, (255, 255, 100))
         ir = info.get_rect(center=(constants.SCREEN_WIDTH // 2, 500))
         self.screen.blit(info, ir)
         pygame.display.flip()
@@ -431,7 +444,7 @@ class Game:
             r = s.get_rect(center=(constants.SCREEN_WIDTH // 2, y))
             self.screen.blit(s, r)
             y += 32
-        info = self.font_small.render("[SPACE] Oyuna Başla!", True, (255, 255, 100))
+        info = self.font_small.render("[SPACE] veya Tıkla → Oyuna Başla!", True, (255, 255, 100))
         ir = info.get_rect(center=(constants.SCREEN_WIDTH // 2, 500))
         self.screen.blit(info, ir)
         pygame.display.flip()
@@ -518,7 +531,7 @@ class Game:
         info_bg = pygame.Surface((self.screen.get_width(), 38), pygame.SRCALPHA)
         info_bg.fill((20, 20, 30, 220))
         self.screen.blit(info_bg, (0, self.screen.get_height() - margin_y))
-        info = self.font_small.render("[↑/↓] veya [W/S] ile kaydır, [SPACE] ile başla", True, (255, 255, 100))
+        info = self.font_small.render("Kaydır: [↑/↓] / Fare / Dokun  |  Başlat: Alttaki çubuğa tıkla", True, (255, 255, 100))
         self.screen.blit(info, (margin_x, self.screen.get_height() - margin_y + 8))
         pygame.display.flip()
 
