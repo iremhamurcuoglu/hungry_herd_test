@@ -29,6 +29,7 @@ class Game:
         self.show_instructions = True
         self.instructions_text = self._load_instructions()
         self.instructions_scroll = 0  # Talimat ekranı için scroll offset
+        self._touch_last_y = None  # Touch/finger scroll tracking
 
         # Assets
         self.loader = AssetsLoader(os.path.join(os.getcwd(), "assets"))
@@ -189,6 +190,17 @@ class Game:
                             self.instructions_scroll += 60
                         else:
                             self.instructions_scroll = max(0, self.instructions_scroll - 60)
+                elif event.type == pygame.FINGERDOWN:
+                    self._touch_last_y = event.y  # normalized 0-1
+                elif event.type == pygame.FINGERMOTION:
+                    if self._touch_last_y is not None:
+                        dy = (self._touch_last_y - event.y) * constants.SCREEN_HEIGHT
+                        self.instructions_scroll += int(dy)
+                        if self.instructions_scroll < 0:
+                            self.instructions_scroll = 0
+                        self._touch_last_y = event.y
+                elif event.type == pygame.FINGERUP:
+                    self._touch_last_y = None
                 continue
 
             if self.tutorial_active:

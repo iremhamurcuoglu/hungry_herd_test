@@ -7,15 +7,19 @@ Works on desktop AND web (pygbag/emscripten).
 import pygame
 import math
 import struct
+import array
 import io
 import sys
 import random
 
-SAMPLE_RATE = 44100
+SAMPLE_RATE = 22050  # Lower rate for web compatibility
 
 
 def _make_sound_from_samples(samples):
     """Convert a list of int16 sample values into a pygame.mixer.Sound via WAV in memory."""
+    # Use array module instead of struct.pack(*samples) to avoid arg limit on web
+    arr = array.array('h', samples)
+    raw = arr.tobytes()
     n = len(samples)
     buf = io.BytesIO()
     data_size = n * 2
@@ -32,7 +36,7 @@ def _make_sound_from_samples(samples):
     buf.write(struct.pack('<H', 16))
     buf.write(b'data')
     buf.write(struct.pack('<I', data_size))
-    buf.write(struct.pack(f'<{n}h', *samples))
+    buf.write(raw)
     buf.seek(0)
     return pygame.mixer.Sound(buf)
 
@@ -102,16 +106,27 @@ class SoundManager:
         self._bg_volume = 0.15
 
         try:
-            if not pygame.mixer.get_init():
-                pygame.mixer.init(frequency=SAMPLE_RATE, size=-16, channels=1, buffer=512)
+            # Re-init mixer at our sample rate for consistent WAV playback
+            if pygame.mixer.get_init():
+                pygame.mixer.quit()
+            pygame.mixer.init(frequency=SAMPLE_RATE, size=-16, channels=1, buffer=1024)
             pygame.mixer.set_num_channels(16)
             self.enabled = True
+        except Exception as e:
+            print(f"SoundManager mixer init warning: {e}")
+            self.enabled = False
+            return
+
+        try:
             self._generate_all_sounds()
+        except Exception as e:
+            print(f"SoundManager sound gen warning: {e}")
+
+        try:
             self._bg_channel = pygame.mixer.Channel(0)
             self._bg_sound = self._generate_background_music()
         except Exception as e:
-            print(f"SoundManager init warning: {e}")
-            self.enabled = False
+            print(f"SoundManager music gen warning: {e}")
 
     def _generate_all_sounds(self):
         self.sounds["plant"] = _generate_melody([(C5, 0.6), (E5, 0.6), (G5, 1.0)], note_duration=0.08, volume=0.25)
