@@ -4,3 +4,4 @@ __pycache__/
 .vscode/
 farm_upgrade_verify.png
 assets/sound/
+_sfx_*.wav
