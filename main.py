@@ -25,9 +25,6 @@ class Game:
         self.game_state = "PLAYING"
         self.mixer_initialized = False # We stay silent
 
-        # İlk ekran: web'de canvas focus almak için tıklama bekle
-        self.wait_for_focus = True
-
         # Instruction ekranı kontrolü
         self.show_instructions = True
         self.instructions_text = self._load_instructions()
@@ -145,9 +142,7 @@ class Game:
         while True:
             dt = self.clock.tick(60) / 1000.0
             self._handle_events()
-            if self.wait_for_focus:
-                self._draw_focus_screen()
-            elif self.show_instructions:
+            if self.show_instructions:
                 self._draw_instructions()
             elif self.tutorial_active:
                 if self.tutorial_phase == "intro":
@@ -171,17 +166,11 @@ class Game:
                 pygame.quit()
                 sys.exit()
 
-            # Web'de canvas focus almak için ilk etkileşim
-            if self.wait_for_focus:
-                if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.FINGERDOWN):
-                    self.wait_for_focus = False
-                continue
-
             if self.show_instructions:
                 if event.type == pygame.KEYDOWN:
-                    if event.key in (pygame.K_DOWN, pygame.K_s):
+                    if event.key in (pygame.K_DOWN, pygame.K_s, pygame.K_RIGHT):
                         self.instructions_scroll += 40
-                    elif event.key in (pygame.K_UP, pygame.K_w):
+                    elif event.key in (pygame.K_UP, pygame.K_w, pygame.K_LEFT):
                         self.instructions_scroll = max(0, self.instructions_scroll - 40)
                     elif event.key == pygame.K_SPACE:
                         self.show_instructions = False
