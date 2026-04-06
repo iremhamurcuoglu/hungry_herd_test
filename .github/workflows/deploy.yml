@@ -23,6 +23,48 @@ jobs:
       run: |
         python -m pip install pygbag
         python -m pygbag --build .
+
+    - name: Patch HTML for cross-browser support
+      run: |
+        cat > /tmp/browser_patch.js << 'PATCH_EOF'
+        <!-- Cross-browser compatibility patch -->
+        <script>
+        (function() {
+          // Safari & Edge AudioContext unlock
+          var audioCtx = null;
+          function unlockAudio() {
+            if (audioCtx && audioCtx.state === 'running') return;
+            try {
+              var AC = window.AudioContext || window.webkitAudioContext;
+              if (!audioCtx) audioCtx = new AC();
+              if (audioCtx.state === 'suspended') {
+                audioCtx.resume().then(function() {
+                  console.log('AudioContext resumed');
+                });
+              }
+              // Create and play a silent buffer to fully unlock
+              var buf = audioCtx.createBuffer(1, 1, 22050);
+              var src = audioCtx.createBufferSource();
+              src.buffer = buf;
+              src.connect(audioCtx.destination);
+              src.start(0);
+            } catch(e) { console.warn('Audio unlock:', e); }
+          }
+          // Unlock on any user interaction
+          ['click','touchstart','keydown','mousedown'].forEach(function(evt) {
+            document.addEventListener(evt, unlockAudio, {once: false, passive: true});
+          });
+          // Safari webkitAudioContext polyfill
+          if (!window.AudioContext && window.webkitAudioContext) {
+            window.AudioContext = window.webkitAudioContext;
+          }
+        })();
+        </script>
+        PATCH_EOF
+        # Inject the patch right after <head> in the built HTML
+        sed -i 's|<head>|<head>\n'"$(cat /tmp/browser_patch.js)"'|' build/web/index.html
+        echo "Browser patch injected into index.html"
+
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@v4
       with:
