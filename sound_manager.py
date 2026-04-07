@@ -111,6 +111,21 @@ def _noise(dur=0.1, vol=0.15):
     return _make_sound(out)
 
 
+def _soft_step(dur=0.045, vol=0.03):
+    """Soft low-frequency step to avoid noisy crackle artifacts."""
+    n = int(_MIX_FREQ * dur)
+    if n <= 0:
+        return None
+    base = 145.0
+    peak = int(vol * 32767)
+    out = []
+    for i in range(n):
+        env = math.sin((math.pi * i) / max(1, n - 1))
+        s = math.sin((2.0 * math.pi * base * i) / _MIX_FREQ) * env
+        out.append(max(-32767, min(32767, int(s * peak))))
+    return _make_sound(out)
+
+
 # Sound effect definitions (lazy - generated on first access)
 _SOUND_DEFS = {
     "plant":          lambda: _melody([(C5,.6),(E5,.6),(G5,1)], nd=.08, vol=.25),
@@ -126,7 +141,7 @@ _SOUND_DEFS = {
     "shop_close":     lambda: _melody([(G5,.8),(C5,1.2)], nd=.1, vol=.2),
     "trash":          lambda: _tone(200, 0.15, 0.2),
     "level_up":       lambda: _melody([(C5,1),(E5,1),(G5,1),(0,.5),(C5,.8),(E5,.8),(G5,.8),(C5*2,3)], nd=.12, vol=.35),
-    "step":           lambda: _noise(dur=.03, vol=.04),
+    "step":           lambda: _soft_step(dur=.045, vol=.03),
 }
 
 _MUSIC_NOTES = [
