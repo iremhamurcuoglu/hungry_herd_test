@@ -122,6 +122,8 @@ jobs:
           function suppressLegacyOverlay(){
             var legacy=document.getElementById('loading-overlay');
             if(legacy){ legacy.style.display='none'; }
+            var infobox=document.getElementById('infobox');
+            if(infobox){ infobox.style.display='none'; }
           }
           function hideOverlay(){
             var ov=document.getElementById('feed-herd-ready');
@@ -157,6 +159,11 @@ jobs:
         html = html.replace('<head>', '<head>' + patch, 1)
         html = html.replace('<body>', '<body>' + intro, 1)
         html = html.replace('Ready to start ! Please click/touch page', '')
+        # Hide the default pygbag infobox so it never overlaps our overlay
+        html = html.replace(
+            '/*           display: none; */',
+            'display: none;'
+        )
         for src in ('hungry_herd_irem.apk', 'hungry_herd_irem.tar.gz'):
             html = html.replace(f'"{src}"', f'"{src}?v={cb}"')
             html = html.replace(f"'{src}'", f"'{src}?v={cb}'")
