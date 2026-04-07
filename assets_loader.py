@@ -5,11 +5,13 @@ import constants
 
 class AssetsLoader:
     """Handles asset loading and procedural generation"""
+    VERSION = "1.4.0"
     
     REQUIRED_ASSETS = [
         'horse', 'player', 'apple', 'apple_pale', 'carrot', 'carrot_pale',
         'crop_seed', 'crop_mature', 'bg_farm_top', 'bg_farm_bottom', 'bg_grass', 
-        'bg_horses', 'shop_stall', 'apple_tree', 'agac_1', 'agac_2', 'agac_3', 'agac_4', 'agac_5', 'poop', 'trash'
+        'bg_horses', 'shop_stall', 'apple_tree', 'agac_1', 'agac_2', 'agac_3', 'agac_4', 'agac_5', 'poop', 'trash',
+        'wheat_seed', 'wheat'
     ]
     
     TARGET_SIZES = {
@@ -29,7 +31,9 @@ class AssetsLoader:
         'agac_4': (120, 120),
         'agac_5': (120, 120),
         'poop': (50, 50),
-        'trash': (80, 80)
+        'trash': (80, 80),
+        'wheat_seed': (25, 25),
+        'wheat': (35, 45)
     }
 
     def __init__(self, assets_dir: str):
@@ -61,9 +65,9 @@ class AssetsLoader:
                         pygame.image.save(self.sprites[name], path)
                     except Exception as e:
                         print(f"Failed to save {name}.png: {e}")
-
         return self.sprites
 
+ 
     def _load_asset(self, name):
         path = os.path.join(self.assets_dir, f"{name}.png")
         try:
@@ -173,4 +177,12 @@ class AssetsLoader:
             s = make_surface(constants.SCREEN_WIDTH - constants.HORSES_START, constants.SCREEN_HEIGHT)
             s.fill(constants.COLOR_GRASS)
             return s
+        elif name == 'wheat_seed':
+             s = make_surface(16, 16)
+             pygame.draw.circle(s, (200, 180, 50), (8, 8), 5)
+             return s
+        elif name == 'wheat':
+             s = make_surface(20, 24)
+             pygame.draw.rect(s, (220, 200, 60), (4, 4, 12, 18))
+             return s
         return make_surface(10, 10)

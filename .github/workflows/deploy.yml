@@ -13,30 +13,23 @@ permissions:
 jobs:
   build-n-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
-    - name: Prepare clean web build source
-      run: |
-        rm -rf web_build_src
-        mkdir -p web_build_src
-        cp main.py constants.py entities.py enums.py assets_loader.py sound_manager.py requirements.txt web_build_src/
-        cp -R assets web_build_src/assets
     - name: Build with pygbag
       run: |
         python -m pip install pygbag
-        python -m pygbag --ume_block 0 --build web_build_src
+        python -m pygbag --ume_block 0 --build .
 
     - name: Patch HTML for cross-browser support
       run: |
         python3 << 'PATCH_SCRIPT'
         import re
 
-        with open('web_build_src/build/web/index.html', 'r') as f:
+        with open('build/web/index.html', 'r') as f:
             html = f.read()
 
         # 1. Meta tags for Edge/IE compatibility + viewport for mobile
@@ -160,7 +153,7 @@ jobs:
         });
         </script>\n</body>''', 1)
 
-        with open('web_build_src/build/web/index.html', 'w') as f:
+        with open('build/web/index.html', 'w') as f:
             f.write(html)
         print('Full browser compatibility patch applied')
         PATCH_SCRIPT
@@ -168,7 +161,7 @@ jobs:
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@v4
       with:
-        folder: web_build_src/build/web
+        folder: build/web
         branch: gh-pages
 
     - name: Install butler (itch.io CLI)
@@ -182,4 +175,4 @@ jobs:
       env:
         BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
       run: |
-        ./butler push web_build_src/build/web iremhamurcuoglu/hungry-herd:html5
+        ./butler push build/web iremhamurcuoglu/hungry-herd:html5

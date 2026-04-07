@@ -2,5 +2,6 @@ __pycache__/
 *.pyc
 .DS_Store
 .vscode/
-*.png
-!assets/*.png
+farm_upgrade_verify.png
+assets/sound/
+_sfx_*.wav
