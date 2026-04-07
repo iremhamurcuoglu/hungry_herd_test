@@ -257,13 +257,13 @@ class Game:
             dt = min(raw_dt, 0.12)
             # Tutorial'ı düşük FPS'te Safari temposuna yaklaştırmak için adaptif çarpan.
             if raw_dt > 0.055:
-                self._tutorial_time_scale = 1.75
+                self._tutorial_time_scale = 2.4
             elif raw_dt > 0.04:
-                self._tutorial_time_scale = 1.45
+                self._tutorial_time_scale = 1.9
             elif raw_dt > 0.03:
-                self._tutorial_time_scale = 1.2
+                self._tutorial_time_scale = 1.5
             else:
-                self._tutorial_time_scale = 1.0
+                self._tutorial_time_scale = 1.2
             self._handle_events()
             keys = pygame.key.get_pressed()
 
@@ -519,8 +519,8 @@ class Game:
                 dy = ty - self.player.y
                 dist = math.sqrt(dx*dx + dy*dy)
                 if dist > 10:
-                    # Edge/Web için tutorial temposunu artır.
-                    speed = max(900 * tdt, 12.0)
+                    # Tutorial'da çiftçi hareketini daha akıcı ve hızlı tut.
+                    speed = max(1300 * tdt, 20.0)
                     self.player.x += (dx / dist) * speed
                     self.player.y += (dy / dist) * speed
                     return
