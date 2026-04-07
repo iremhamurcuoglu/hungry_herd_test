@@ -27,6 +27,7 @@ jobs:
     - name: Patch HTML for cross-browser support
       run: |
         python3 -c "
+        import os
         patch = '''<script>
         (function(){
           var ac=null;
@@ -49,9 +50,13 @@ jobs:
         })();
         </script>'''
         with open('build/web/index.html','r') as f: html=f.read()
+        cb = os.environ.get('GITHUB_SHA', 'dev')[:8]
         html=html.replace('<head>','<head>'+patch,1)
+        for src in ('hungry_herd_irem.apk', 'hungry_herd_irem.tar.gz'):
+          html=html.replace(f'\"{src}\"', f'\"{src}?v={cb}\"')
+          html=html.replace(f"'{src}'", f"'{src}?v={cb}'")
         with open('build/web/index.html','w') as f: f.write(html)
-        print('Browser patch injected')
+        print(f'Browser patch injected with cache-bust v={cb}')
         "
 
     - name: Deploy to GitHub Pages
