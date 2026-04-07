@@ -108,6 +108,10 @@ jobs:
         </div>
         <script>
         (function(){
+          function suppressLegacyOverlay(){
+            var legacy=document.getElementById('loading-overlay');
+            if(legacy){ legacy.style.display='none'; }
+          }
           function hideOverlay(){
             var ov=document.getElementById('feed-herd-ready');
             if(!ov) return;
@@ -115,6 +119,7 @@ jobs:
             setTimeout(function(){ if(ov&&ov.parentNode){ ov.parentNode.removeChild(ov); } }, 550);
           }
           function checkReady(){
+            suppressLegacyOverlay();
             var c=document.querySelector('canvas');
             if(c&&c.width>100&&c.height>100){
               hideOverlay();
@@ -127,7 +132,10 @@ jobs:
           }else{
             checkReady();
           }
-          setTimeout(hideOverlay, 30000);
+          setTimeout(function(){
+            var note=document.getElementById('feed-herd-note');
+            if(note){ note.textContent='Yukleme devam ediyor, ilk acilis 1 dakikaya kadar surebilir...'; }
+          }, 25000);
         })();
         </script>'''
 
