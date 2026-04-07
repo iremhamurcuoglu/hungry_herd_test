@@ -42,18 +42,23 @@ class Crop:
         
         if self.state == CropState.MATURE:
             spr_key = 'crop_mature' if self.type == FoodType.CARROT else 'wheat'
-            spr = sprites.get(spr_key)
-            if spr:
-                scaled = pygame.transform.smoothscale(spr, target_size)
-                screen.blit(scaled, (int(self.x - target_size[0]//2), int(self.y - target_size[1]//2)))
+            # Cache mature sprite
+            cache_key = ('_mature_cache', spr_key)
+            if not hasattr(self, '_spr_cache') or self._spr_cache.get('key') != cache_key:
+                spr = sprites.get(spr_key)
+                if spr:
+                    self._spr_cache = {'key': cache_key, 'surf': pygame.transform.scale(spr, target_size)}
+            cached = getattr(self, '_spr_cache', {}).get('surf')
+            if cached:
+                screen.blit(cached, (int(self.x - target_size[0]//2), int(self.y - target_size[1]//2)))
         else:
             spr_key = 'crop_seed' if self.type == FoodType.CARROT else 'wheat_seed'
             spr = sprites.get(spr_key)
             if spr:
-                # Growing phase scaling
+                # Growing phase scaling — use scale (faster than smoothscale)
                 sw = int(target_size[0] * (0.4 + 0.6 * growth))
                 sh = int(target_size[1] * (0.4 + 0.6 * growth))
-                scaled = pygame.transform.smoothscale(spr, (sw, sh))
+                scaled = pygame.transform.scale(spr, (max(1, sw), max(1, sh)))
                 screen.blit(scaled, (int(self.x - sw//2), int(self.y - sh//2)))
 
 class AppleTree:
@@ -88,16 +93,21 @@ class AppleTree:
         
     def draw(self, screen, sprites):
         growth_ratio = min(1.0, self.timer / self.growth_time)
-        # Smoothly scale from 30px to 120px
         current_size = int(30 + (120 - 30) * growth_ratio)
         
-        # Use agac_4 for growth, agac_5 for final READY state
         spr_name = 'agac_4' if growth_ratio < 1.0 else 'agac_5'
         
-        spr = sprites.get(spr_name)
-        if spr:
-            scaled = pygame.transform.smoothscale(spr, (current_size, current_size))
-            screen.blit(scaled, (int(self.x - current_size//2), int(self.y - current_size//2)))
+        # Cache scaled sprite per size (changes during growth)
+        cache_key = (spr_name, current_size)
+        if not hasattr(self, '_spr_cache'):
+            self._spr_cache = {}
+        if cache_key not in self._spr_cache:
+            spr = sprites.get(spr_name)
+            if spr:
+                self._spr_cache[cache_key] = pygame.transform.scale(spr, (current_size, current_size))
+        cached = self._spr_cache.get(cache_key)
+        if cached:
+            screen.blit(cached, (int(self.x - current_size//2), int(self.y - current_size//2)))
             
         if self.state == "READY" and self.apples_left > 0:
             apple_spr = sprites.get('apple')
@@ -214,13 +224,16 @@ class Horse:
                     # Draw circular bubble background
                     pygame.draw.circle(screen, (255, 255, 255, 180), (int(bx + 18), int(by + 18)), 22)
                     
-                    # Create a copy to adjust alpha
-                    icon_spr = pygame.transform.scale(s, (35, 35)).copy()
+                    # Use cached scaled icon
+                    cache_key = (spr_name, 35)
+                    if not hasattr(self, '_icon_cache'):
+                        self._icon_cache = {}
+                    if cache_key not in self._icon_cache:
+                        self._icon_cache[cache_key] = pygame.transform.scale(s, (35, 35))
+                    icon_spr = self._icon_cache[cache_key].copy()
                     if i >= len(self.fed_items):
-                        # Still needed -> Low opacity
-                        icon_spr.set_alpha(80) # 80/255 opacity
+                        icon_spr.set_alpha(80)
                     else:
-                        # Already fed -> Full opacity
                         icon_spr.set_alpha(255)
                         
                     screen.blit(icon_spr, (int(bx), int(by)))
@@ -229,7 +242,7 @@ class Player:
     def __init__(self):
         self.x = constants.SCREEN_WIDTH // 2
         self.y = constants.SCREEN_HEIGHT // 2
-        self.base_speed = 240
+        self.base_speed = 360
         self.speed: float = float(self.base_speed)
         self.state = PlayerState.EMPTY
         self.items: List[str] = [] # Supports multiple items for Big Basket
@@ -291,8 +304,10 @@ class Player:
 
         length = math.sqrt(dx*dx + dy*dy)
         if length > 0:
-            self.x += (dx/length) * self.speed * dt
-            self.y += (dy/length) * self.speed * dt
+            # FPS-independent: en az 4 px/frame garanti (Edge WASM düşük FPS)
+            move_amount = max(self.speed * dt, 4.0)
+            self.x += (dx/length) * move_amount
+            self.y += (dy/length) * move_amount
             
         # Bound to screen
         self.x = max(20, min(constants.SCREEN_WIDTH - 20, self.x))
@@ -313,9 +328,14 @@ class Player:
             
             item_spr = sprites.get(item_spr_name)
             if item_spr:
-                sw, sh = item_spr.get_size()
-                scale = 25 / max(sw, sh)
-                scaled = pygame.transform.smoothscale(item_spr, (int(sw*scale), int(sh*scale)))
+                # Cache scaled inventory sprites
+                if not hasattr(self, '_inv_cache'):
+                    self._inv_cache = {}
+                if item_spr_name not in self._inv_cache:
+                    sw, sh = item_spr.get_size()
+                    scale = 25 / max(sw, sh)
+                    self._inv_cache[item_spr_name] = pygame.transform.scale(item_spr, (int(sw*scale), int(sh*scale)))
+                scaled = self._inv_cache[item_spr_name]
                 # Stack items above head
                 offset_y = -50 - (i * 20)
                 screen.blit(scaled, (int(self.x - scaled.get_width()//2), int(self.y + offset_y)))

@@ -3,7 +3,6 @@ from enum import Enum
 class FoodType(Enum):
     APPLE = 0
     CARROT = 1
-    WHEAT = 2
 
 class HorseState(Enum):
     WAITING = 0
