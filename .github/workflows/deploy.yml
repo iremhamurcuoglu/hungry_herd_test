@@ -113,7 +113,6 @@ jobs:
           <div id="feed-herd-card">
             <h1 id="feed-herd-title">FEED HERD</h1>
             <div id="feed-herd-emoji">🐴 🥕 🌾 🍎</div>
-            <p id="feed-herd-readyline">Ready to Start</p>
             <p id="feed-herd-note">Please click/touch page. Oyun yuklenmesi biraz surebilir, lutfen bekleyin...</p>
           </div>
         </div>
@@ -135,6 +134,8 @@ jobs:
             suppressLegacyOverlay();
             var c=document.querySelector('canvas');
             if(c&&c.width>100&&c.height>100){
+              var note=document.getElementById('feed-herd-note');
+              if(note){ note.style.display='none'; }
               hideOverlay();
             }else{
               setTimeout(checkReady,300);
