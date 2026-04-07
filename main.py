@@ -863,8 +863,9 @@ class Game:
             self._draw_centered_text(msg, timer_y, (0, 255, 100), self.font_small)
 
         # Müzik ve restart UI ipuçları
-        music_icon = "♫ ON" if self.sound_manager.music_playing else "♫ OFF"
-        music_color = (100, 255, 100) if self.sound_manager.music_playing else (255, 100, 100)
+        music_is_on = getattr(self.sound_manager, "music_enabled", self.sound_manager.music_playing)
+        music_icon = "♫ ON" if music_is_on else "♫ OFF"
+        music_color = (100, 255, 100) if music_is_on else (255, 100, 100)
         self._draw_text(f"[M] {music_icon}", (10, 10), music_color, self.font_small)
         self._music_toggle_rect = pygame.Rect(8, 8, 130, 24)
         self._draw_text("[R] Yeniden Başlat", (10, 35), (180, 180, 180), self.font_small)

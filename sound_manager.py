@@ -196,6 +196,7 @@ class SoundManager:
         self._bg_volume = 0.10 if IS_WEB else 0.14
         # Keep background music enabled on web, but quieter to reduce artifacts.
         self._bg_music_enabled = True
+        self.music_enabled = True
         self._audio_unlocked = not IS_WEB
         self._pending_music = IS_WEB and self._bg_music_enabled
 
@@ -208,6 +209,7 @@ class SoundManager:
                 _MIX_FREQ = info[0]
                 _MIX_CHANNELS = info[2]
             pygame.mixer.set_num_channels(8)
+            pygame.mixer.set_reserved(1)
             self._bg_channel = pygame.mixer.Channel(0)
             self.enabled = True
             print(f"SoundManager OK: mixer={info}, freq={_MIX_FREQ}, ch={_MIX_CHANNELS}")
@@ -251,8 +253,11 @@ class SoundManager:
         if self._bg_sound is None:
             try:
                 self._bg_sound = _ambient_music_loop(dur=6.0, vol=0.05)
+                if self._bg_sound is None:
+                    self._bg_sound = _tone(C4, 1.4, 0.03)
             except Exception as e:
                 print(f"Music gen error: {e}")
+                self._bg_sound = _tone(C4, 1.4, 0.03)
 
     def play(self, sound_name):
         if not self.enabled or not self._audio_unlocked:
@@ -265,7 +270,7 @@ class SoundManager:
             pass
 
     def start_music(self):
-        if not self._bg_music_enabled:
+        if (not self._bg_music_enabled) or (not self.music_enabled):
             self.music_playing = False
             self._pending_music = False
             return
@@ -296,6 +301,10 @@ class SoundManager:
         if not self._bg_music_enabled:
             self.music_playing = False
             self._pending_music = False
+            return
+        self.music_enabled = not self.music_enabled
+        if not self.music_enabled:
+            self.stop_music()
             return
         if self.music_playing:
             self.stop_music()
