@@ -171,6 +171,8 @@ class Game:
             # Unlock web audio on first user interaction
             if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
                 self.sound_manager.unlock_audio()
+                if not self.sound_manager.music_playing:
+                    self.sound_manager.start_music()
 
             if self.show_instructions:
                 if event.type == pygame.KEYDOWN:

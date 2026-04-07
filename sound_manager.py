@@ -197,7 +197,7 @@ class SoundManager:
         # Keep background music enabled on web, but quieter to reduce artifacts.
         self._bg_music_enabled = True
         self._audio_unlocked = not IS_WEB
-        self._pending_music = False
+        self._pending_music = IS_WEB and self._bg_music_enabled
 
         try:
             info = pygame.mixer.get_init()
