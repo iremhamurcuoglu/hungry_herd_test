@@ -19,7 +19,7 @@ C5=523.25; D5=587.33; E5=659.25; F5=698.46
 G5=783.99; A5=880.00
 
 # Will be set after mixer init
-_MIX_FREQ = 22050
+_MIX_FREQ = 44100
 _MIX_CHANNELS = 2
 
 
@@ -110,10 +110,11 @@ _SOUND_DEFS = {
 }
 
 _MUSIC_NOTES = [
-    (C4,2),(E4,1),(G4,1),(E4,2),(C4,2),
-    (D4,2),(F4,1),(A4,1),(G4,2),(E4,2),
-    (C4,2),(D4,1),(E4,1),(C4,4),
-    (0,2),
+    (C4, 4), (E4, 2), (G4, 2),
+    (A4, 2), (G4, 2), (E4, 2),
+    (D4, 4), (F4, 2), (A4, 2),
+    (G4, 4), (E4, 2), (D4, 2),
+    (C4, 6), (0, 2),
 ]
 
 
@@ -132,7 +133,7 @@ class SoundManager:
         try:
             info = pygame.mixer.get_init()
             if not info:
-                pygame.mixer.init()
+                pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=1024)
                 info = pygame.mixer.get_init()
             if info:
                 _MIX_FREQ = info[0]
@@ -180,7 +181,7 @@ class SoundManager:
         """Lazy-generate background music."""
         if self._bg_sound is None:
             try:
-                self._bg_sound = _melody(_MUSIC_NOTES, nd=0.2, vol=0.10)
+                self._bg_sound = _melody(_MUSIC_NOTES, nd=0.28, vol=0.055)
             except Exception as e:
                 print(f"Music gen error: {e}")
 

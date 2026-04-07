@@ -33,10 +33,10 @@ class Game:
         self._is_web = (sys.platform == "emscripten")
         self._tutorial_ultra_mode = self._is_web
         self._web_fast_mode = self._is_web
+        self.show_touch_controls = False
 
-        # Web'de ses miksleme maliyeti yüksekse doğrudan kapat.
+        # Web fast mode'da arka plan müziğini kapalı tut; işlem sesleri açık kalır.
         if self._web_fast_mode:
-            self.sound_manager.enabled = False
             self.sound_manager.stop_music()
 
         # Manuel tuş tracking (Edge WASM'da get_pressed() güvenilir değil)
@@ -351,7 +351,7 @@ class Game:
                 self.sound_manager.unlock_audio()
 
             # --- Mouse/Touch: buton basılı tutma (D-pad) ---
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.show_touch_controls and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 btn = self._get_button_at(event.pos)
                 if btn in ('up', 'down', 'left', 'right'):
                     self.virtual_keys[btn] = True
@@ -415,22 +415,27 @@ class Game:
             # --- OYUN İÇİ MOUSE/TOUCH ---
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mx, my = event.pos
-                btn = self._get_button_at((mx, my))
-                
-                if btn == 'action_e':
-                    self._handle_interaction()
-                elif btn == 'action_space':
-                    if self.game_over:
-                        self.reset_game()
-                    elif abs(self.player.x - constants.STORAGE_X) < 120 and abs(self.player.y - constants.STORAGE_Y) < 120:
-                        self.shop_open = not self.shop_open
-                        self.sound_manager.play("shop_open" if self.shop_open else "shop_close")
-                    elif abs(self.player.x - constants.TRASH_X) < 120 and abs(self.player.y - constants.TRASH_Y) < 120:
+                if self.game_over:
+                    self.reset_game()
+                elif self.show_touch_controls:
+                    btn = self._get_button_at((mx, my))
+
+                    if btn == 'action_e':
                         self._handle_interaction()
+                    elif btn == 'action_space':
+                        if abs(self.player.x - constants.STORAGE_X) < 120 and abs(self.player.y - constants.STORAGE_Y) < 120:
+                            self.shop_open = not self.shop_open
+                            self.sound_manager.play("shop_open" if self.shop_open else "shop_close")
+                        elif abs(self.player.x - constants.TRASH_X) < 120 and abs(self.player.y - constants.TRASH_Y) < 120:
+                            self._handle_interaction()
+                        else:
+                            self.shop_open = False
+                    elif btn in ('up', 'down', 'left', 'right'):
+                        pass  # D-pad basılı tutma yukarıda yönetiliyor
+                    elif self.shop_open:
+                        self._handle_shop_click(mx, my)
                     else:
-                        self.shop_open = False
-                elif btn in ('up', 'down', 'left', 'right'):
-                    pass  # D-pad basılı tutma yukarıda yönetiliyor
+                        self.player.set_move_target(mx, my)
                 elif self.shop_open:
                     # Shop butonlarına tıklama
                     self._handle_shop_click(mx, my)
@@ -1254,8 +1259,9 @@ class Game:
         if not lightweight:
             self._draw_interaction_prompts()
 
-            # 8. On-screen D-pad and action buttons
-            self._draw_onscreen_buttons()
+            if self.show_touch_controls:
+                # 8. On-screen D-pad and action buttons
+                self._draw_onscreen_buttons()
         
         if present:
             pygame.display.flip()
@@ -1371,11 +1377,11 @@ class Game:
         prompt = ""
         # Shop prompt
         if abs(self.player.x - constants.STORAGE_X) < 100 and abs(self.player.y - constants.STORAGE_Y) < 100:
-            prompt = "[SPACE/Tıkla] Market"
+            prompt = "[SPACE] Market"
         
         # Plant hint
         if any(item in self.player.items for item in ["SEED", "SAPLING", "WHEAT_SEED"]) and self.player.x < constants.FARM_END:
-            prompt = "[E/EK Butonu] Ek"
+            prompt = "[E] Ek"
 
         if prompt:
             self._draw_centered_text(prompt, self.player.y - 70, constants.COLOR_BLACK, self.font_small)
