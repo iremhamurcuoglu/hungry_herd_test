@@ -19,6 +19,17 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
+    - name: Sync nested source into root
+      run: |
+        for f in main.py sound_manager.py constants.py entities.py enums.py assets_loader.py streamlit_app.py requirements.txt README.md INSTRUCTIONS.md; do
+          if [ -f "hungry_herd_game/$f" ]; then
+            cp "hungry_herd_game/$f" "$f"
+          fi
+        done
+        if [ -d "hungry_herd_game/assets" ]; then
+          rm -rf assets
+          cp -R hungry_herd_game/assets assets
+        fi
     - name: Build with pygbag
       run: |
         python -m pip install pygbag
