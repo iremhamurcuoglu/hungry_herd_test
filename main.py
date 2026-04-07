@@ -21,17 +21,11 @@ class Game:
         self.clock = pygame.time.Clock()
         self.font_small = pygame.font.SysFont("Arial", 20, bold=True)
         self.font_large = pygame.font.SysFont("Arial", 40, bold=True)
-        self.version = "v1.9.0"
+        self.version = "v1.5.0"
         self.game_state = "LOADING"
         self.mixer_initialized = False # We stay silent
         self._loading_done = False
         self._loading_frame = 0
-        self._bg_cache = None  # Cached background surface
-        self._font_cache = {}  # Font render cache
-        self._notif_bg_cache = None  # Notification bg cache
-
-        # Manuel tuş tracking (Edge WASM'da get_pressed() güvenilir değil)
-        self._held_keys = set()
 
         # Instruction ekranı kontrolü
         self.show_instructions = True
@@ -173,79 +167,22 @@ class Game:
             self.horses.append(h)
 
     def _draw_text(self, text, pos, color, font):
-        # Cached font rendering for performance
-        cache_key = (text, color, id(font))
-        cached = self._font_cache.get(cache_key)
-        if cached is None:
-            if isinstance(color, tuple) and len(color) == 4:
-                surf = font.render(text, True, color[:3])
-                surf.set_alpha(color[3])
-            else:
-                surf = font.render(text, True, color)
-            if len(self._font_cache) > 200:
-                self._font_cache.clear()
-            self._font_cache[cache_key] = surf
-            cached = surf
-        self.screen.blit(cached, pos)
+        if isinstance(color, tuple) and len(color) == 4: # RGBA support for some calls
+            surf = font.render(text, True, color[:3])
+            surf.set_alpha(color[3])
+        else:
+            surf = font.render(text, True, color)
+        self.screen.blit(surf, pos)
 
     def _draw_centered_text(self, text, y, color, font):
-        cache_key = (text, color, id(font), 'centered')
-        cached = self._font_cache.get(cache_key)
-        if cached is None:
-            cached = font.render(text, True, color)
-            if len(self._font_cache) > 200:
-                self._font_cache.clear()
-            self._font_cache[cache_key] = cached
-        rect = cached.get_rect(center=(constants.SCREEN_WIDTH//2, y))
-        self.screen.blit(cached, rect)
-
-    def _build_bg_cache(self):
-        """Arka planı bir kez çiz, cache'le. Her frame'de 80+ blit yerine 1 blit."""
-        self._bg_cache = pygame.Surface((constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT))
-        # Grass tiles
-        for x in range(0, constants.SCREEN_WIDTH, 100):
-            for y in range(0, constants.SCREEN_HEIGHT, 100):
-                self._bg_cache.blit(self.sprites['bg_farm_bottom'], (x, y))
-        # Carrot field
-        carrot_field_surf = pygame.Surface((constants.FARM_END, constants.FARM_MID_Y), pygame.SRCALPHA)
-        carrot_field_surf.blit(self.sprites['bg_farm_top'], (0, 0))
-        mask = pygame.Surface((constants.FARM_END, constants.FARM_MID_Y), pygame.SRCALPHA)
-        pygame.draw.rect(mask, (255, 255, 255, 255), (0, 0, constants.FARM_END, constants.FARM_MID_Y),
-                         border_top_right_radius=50, border_bottom_right_radius=50)
-        carrot_field_surf.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
-        self._bg_cache.blit(carrot_field_surf, (0, 0))
+        surf = font.render(text, True, color)
+        rect = surf.get_rect(center=(constants.SCREEN_WIDTH//2, y))
+        self.screen.blit(surf, rect)
 
     async def run(self):
         while True:
-            raw_dt = self.clock.tick(60) / 1000.0
-            # Edge WASM'da FPS düşük olabilir (10-20 FPS)
-            # dt'yi 0.1'e cap'le ama hareketi yeterli tut
-            dt = min(raw_dt, 0.1)
+            dt = self.clock.tick(60) / 1000.0
             self._handle_events()
-            
-            # _held_keys fallback: event kaçırılırsa bir sonraki frame yakalar
-            if pygame.K_SPACE in self._held_keys:
-                if self.show_instructions:
-                    self.show_instructions = False
-                    self.reset_game()
-                    self.tutorial_active = True
-                    self._held_keys.discard(pygame.K_SPACE)
-                elif self.tutorial_active:
-                    if self.tutorial_phase == "intro":
-                        self.tutorial_phase = "playing"
-                        self.tutorial_step = 0
-                        self.tutorial_wait = 0.0
-                        self.tutorial_feed_count = 0
-                        self.reset_game()
-                        self.sound_manager.start_music()
-                        self._held_keys.discard(pygame.K_SPACE)
-                    elif self.tutorial_phase == "outro":
-                        self.tutorial_active = False
-                        self.sound_manager.stop_music()
-                        self.reset_game()
-                        self.sound_manager.start_music()
-                        self._held_keys.discard(pygame.K_SPACE)
-            
             if self.show_instructions:
                 self._draw_instructions()
             elif self.tutorial_active:
@@ -269,12 +206,6 @@ class Game:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-
-            # Manuel tuş tracking — Edge WASM'da get_pressed() tuşları kaçırıyor
-            if event.type == pygame.KEYDOWN:
-                self._held_keys.add(event.key)
-            elif event.type == pygame.KEYUP:
-                self._held_keys.discard(event.key)
 
             # Unlock web audio on first user interaction
             if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.FINGERDOWN):
@@ -329,9 +260,7 @@ class Game:
                 continue
 
             if self.tutorial_active:
-                # SPACE: event-based + _held_keys fallback (Edge WASM gecikme fix)
-                space_pressed = (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE)
-                if space_pressed:
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                     if self.tutorial_phase == "intro":
                         self.tutorial_phase = "playing"
                         self.tutorial_step = 0
@@ -477,8 +406,7 @@ class Game:
                 dy = ty - self.player.y
                 dist = math.sqrt(dx*dx + dy*dy)
                 if dist > 10:
-                    # Piksel-bazlı minimum hız: en az 6 px/frame
-                    speed = max(500 * dt, 6.0)
+                    speed = 200 * dt
                     self.player.x += (dx / dist) * speed
                     self.player.y += (dy / dist) * speed
                     return
@@ -920,20 +848,22 @@ class Game:
         if self.level_up_timer > 0:
             self.level_up_timer -= dt
             
-        # Manuel tuş tracking + D-pad birleştir (Edge WASM uyumu)
-        held = self._held_keys
-        vk = self.virtual_keys
+        # Sanal tuşları (D-pad) klavye tuşlarıyla birleştir
+        keys = pygame.key.get_pressed()
         
-        class ManualKeys:
-            \"\"\"_held_keys + virtual_keys birleştirici\"\"\"
+        # Virtual d-pad tuşlarını inject et (mutable list olarak)
+        class CombinedKeys:
+            def __init__(self, real_keys, virtual):
+                self._keys = real_keys
+                self._virtual = virtual
             def __getitem__(self, key):
-                if key == pygame.K_UP and vk.get('up'): return True
-                if key == pygame.K_DOWN and vk.get('down'): return True
-                if key == pygame.K_LEFT and vk.get('left'): return True
-                if key == pygame.K_RIGHT and vk.get('right'): return True
-                return key in held
+                if key == pygame.K_UP and self._virtual.get('up'): return True
+                if key == pygame.K_DOWN and self._virtual.get('down'): return True
+                if key == pygame.K_LEFT and self._virtual.get('left'): return True
+                if key == pygame.K_RIGHT and self._virtual.get('right'): return True
+                return self._keys[key]
         
-        combined = ManualKeys()
+        combined = CombinedKeys(keys, self.virtual_keys)
         self.player.move(combined, dt)
         
         if any(combined[k] for k in (pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d,
@@ -1007,10 +937,22 @@ class Game:
         # ...existing code...
 
     def _draw(self):
-        # 0. Cached background (1 blit instead of 80+)
-        if self._bg_cache is None:
-            self._build_bg_cache()
-        self.screen.blit(self._bg_cache, (0, 0))
+        # 0. Clear screen
+        self.screen.fill((0, 0, 0))
+
+        # 1. Fill background (Grass)
+        for x in range(0, constants.SCREEN_WIDTH, 100):
+            for y in range(0, constants.SCREEN_HEIGHT, 100):
+                self.screen.blit(self.sprites['bg_farm_bottom'], (x, y))
+                
+        # 2. Carrot Field
+        carrot_field_surf = pygame.Surface((constants.FARM_END, constants.FARM_MID_Y), pygame.SRCALPHA)
+        carrot_field_surf.blit(self.sprites['bg_farm_top'], (0, 0))
+        mask = pygame.Surface((constants.FARM_END, constants.FARM_MID_Y), pygame.SRCALPHA)
+        pygame.draw.rect(mask, (255, 255, 255, 255), (0, 0, constants.FARM_END, constants.FARM_MID_Y), 
+                         border_top_right_radius=50, border_bottom_right_radius=50)
+        carrot_field_surf.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+        self.screen.blit(carrot_field_surf, (0, 0))
         
         # 3. Shop
         self._draw_text("ATLAR", (constants.HORSES_START + 10, 20), constants.COLOR_BLACK, self.font_small)
@@ -1065,23 +1007,25 @@ class Game:
 
         if self.notification_timer > 0:
             msg = self.notification_msg
+            # Aesthetic Notification Box
             notif_w, notif_h = 550, 60
-            # Cache notification background
-            if self._notif_bg_cache is None:
-                self._notif_bg_cache = pygame.Surface((notif_w, notif_h), pygame.SRCALPHA)
-                pygame.draw.rect(self._notif_bg_cache, (20, 20, 30, 230), (0, 0, notif_w, notif_h), border_radius=15)
+            overlay = pygame.Surface((notif_w, notif_h), pygame.SRCALPHA)
+            # Gradient-ish background (darker at edges)
+            pygame.draw.rect(overlay, (20, 20, 30, 230), (0, 0, notif_w, notif_h), border_radius=15)
             
             notif_x = (constants.SCREEN_WIDTH - notif_w) // 2
             notif_y = 150
-            self.screen.blit(self._notif_bg_cache, (notif_x, notif_y))
+            self.screen.blit(overlay, (notif_x, notif_y))
+            # Gold Border
             pygame.draw.rect(self.screen, (255, 215, 0), (notif_x, notif_y, notif_w, notif_h), width=3, border_radius=15)
             
-            self._draw_text(msg, (notif_x + (notif_w - self.font_small.size(msg)[0]) // 2 + 2,
-                                  notif_y + (notif_h - self.font_small.get_height()) // 2 + 2),
-                           (0, 0, 0), self.font_small)
-            self._draw_text(msg, (notif_x + (notif_w - self.font_small.size(msg)[0]) // 2,
-                                  notif_y + (notif_h - self.font_small.get_height()) // 2),
-                           (255, 255, 255), self.font_small)
+            # Text with subtle shadow
+            shadow = self.font_small.render(msg, True, (0, 0, 0))
+            text = self.font_small.render(msg, True, (255, 255, 255))
+            tx = notif_x + (notif_w - text.get_width()) // 2
+            ty = notif_y + (notif_h - text.get_height()) // 2
+            self.screen.blit(shadow, (tx + 2, ty + 2))
+            self.screen.blit(text, (tx, ty))
 
         # 6. Active Power-ups (Timers) - Top Center below Level
         timer_y = 115
@@ -1119,10 +1063,9 @@ class Game:
         overlay_x = (constants.SCREEN_WIDTH - w) // 2
         overlay_y = (constants.SCREEN_HEIGHT - h) // 2
         
-        if not hasattr(self, '_gameover_bg'):
-            self._gameover_bg = pygame.Surface((w, h), pygame.SRCALPHA)
-            pygame.draw.rect(self._gameover_bg, (0, 0, 0, 220), (0, 0, w, h), border_radius=30)
-        self.screen.blit(self._gameover_bg, (overlay_x, overlay_y))
+        overlay = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.rect(overlay, (0, 0, 0, 220), (0, 0, w, h), border_radius=30)
+        self.screen.blit(overlay, (overlay_x, overlay_y))
         pygame.draw.rect(self.screen, (255, 50, 50), (overlay_x, overlay_y, w, h), width=4, border_radius=30)
         
         self._draw_centered_text("OYUN BİTTİ", overlay_y + 60, (255, 50, 50), self.font_large)
@@ -1132,24 +1075,16 @@ class Game:
     def _draw_stat_box(self, x, y, val, title, color):
         width, height = constants.BOX_WIDTH, constants.BOX_HEIGHT
         rect = pygame.Rect(x - width//2, y - height//2, width, height)
+        # Compact style
         pygame.draw.rect(self.screen, (0,0,0,30), rect.move(3,3), border_radius=12)
         pygame.draw.rect(self.screen, color, rect, border_radius=12)
         pygame.draw.rect(self.screen, (30,30,30), rect, width=2, border_radius=12)
         
-        # Cached font renders
-        val_key = (val, 'stat_val')
-        val_surf = self._font_cache.get(val_key)
-        if val_surf is None:
-            val_surf = self.font_large.render(val, True, constants.COLOR_BLACK)
-            self._font_cache[val_key] = val_surf
+        val_surf = self.font_large.render(val, True, constants.COLOR_BLACK)
         v_rect = val_surf.get_rect(center=(x, y-8))
         self.screen.blit(val_surf, v_rect)
         
-        title_key = (title, 'stat_title')
-        title_surf = self._font_cache.get(title_key)
-        if title_surf is None:
-            title_surf = self.font_small.render(title, True, constants.COLOR_BLACK)
-            self._font_cache[title_key] = title_surf
+        title_surf = self.font_small.render(title, True, constants.COLOR_BLACK)
         t_rect = title_surf.get_rect(center=(x, y + 18))
         self.screen.blit(title_surf, t_rect)
 
@@ -1158,10 +1093,9 @@ class Game:
         overlay_x = (constants.SCREEN_WIDTH - w) // 2
         overlay_y = (constants.SCREEN_HEIGHT - h) // 2
         
-        if not hasattr(self, '_shop_bg'):
-            self._shop_bg = pygame.Surface((w, h), pygame.SRCALPHA)
-            pygame.draw.rect(self._shop_bg, (0, 0, 0, 220), (0, 0, w, h), border_radius=25)
-        self.screen.blit(self._shop_bg, (overlay_x, overlay_y))
+        overlay = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.rect(overlay, (0, 0, 0, 220), (0, 0, w, h), border_radius=25)
+        self.screen.blit(overlay, (overlay_x, overlay_y))
         
         self._draw_text("PAZAR - SHOP", (overlay_x + 150, overlay_y + 30), (255, 255, 255), self.font_large)
         
@@ -1209,9 +1143,6 @@ class Game:
 
     def _draw_onscreen_buttons(self):
         """Ekrandaki dokunmatik D-pad ve aksiyon butonlarını çiz"""
-        if not hasattr(self, '_btn_surf_cache'):
-            self._btn_surf_cache = {}
-
         # D-pad butonları
         dpad_buttons = [
             (self.btn_up, "▲"),
@@ -1223,34 +1154,32 @@ class Game:
         
         for i, (rect, label) in enumerate(dpad_buttons):
             pressed = self.virtual_keys.get(dpad_keys[i], False)
-            cache_key = (dpad_keys[i], pressed)
-            if cache_key not in self._btn_surf_cache:
-                bg_color = (80, 80, 120, 200) if not pressed else (140, 140, 200, 230)
-                border_color = (180, 180, 220) if not pressed else (255, 255, 255)
-                surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-                pygame.draw.rect(surf, bg_color, (0, 0, rect.width, rect.height), border_radius=10)
-                pygame.draw.rect(surf, border_color, (0, 0, rect.width, rect.height), width=2, border_radius=10)
-                txt = self.font_small.render(label, True, (255, 255, 255))
-                tr = txt.get_rect(center=(rect.width // 2, rect.height // 2))
-                surf.blit(txt, tr)
-                self._btn_surf_cache[cache_key] = surf
-            self.screen.blit(self._btn_surf_cache[cache_key], rect.topleft)
+            bg_color = (80, 80, 120, 200) if not pressed else (140, 140, 200, 230)
+            border_color = (180, 180, 220) if not pressed else (255, 255, 255)
+            
+            surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+            pygame.draw.rect(surf, bg_color, (0, 0, rect.width, rect.height), border_radius=10)
+            pygame.draw.rect(surf, border_color, (0, 0, rect.width, rect.height), width=2, border_radius=10)
+            self.screen.blit(surf, rect.topleft)
+            
+            txt = self.font_small.render(label, True, (255, 255, 255))
+            tr = txt.get_rect(center=rect.center)
+            self.screen.blit(txt, tr)
 
         # Aksiyon butonları
         action_buttons = [
-            (self.btn_action_e, "EK [E]", "action_e", (60, 160, 60, 200)),
-            (self.btn_action_space, "AKSİYON", "action_space", (60, 60, 160, 200)),
+            (self.btn_action_e, "EK [E]", (60, 160, 60, 200)),
+            (self.btn_action_space, "AKSİYON", (60, 60, 160, 200)),
         ]
-        for rect, label, key, bg in action_buttons:
-            if key not in self._btn_surf_cache:
-                surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-                pygame.draw.rect(surf, bg, (0, 0, rect.width, rect.height), border_radius=10)
-                pygame.draw.rect(surf, (220, 220, 255), (0, 0, rect.width, rect.height), width=2, border_radius=10)
-                txt = self.font_small.render(label, True, (255, 255, 255))
-                tr = txt.get_rect(center=(rect.width // 2, rect.height // 2))
-                surf.blit(txt, tr)
-                self._btn_surf_cache[key] = surf
-            self.screen.blit(self._btn_surf_cache[key], rect.topleft)
+        for rect, label, bg in action_buttons:
+            surf = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+            pygame.draw.rect(surf, bg, (0, 0, rect.width, rect.height), border_radius=10)
+            pygame.draw.rect(surf, (220, 220, 255), (0, 0, rect.width, rect.height), width=2, border_radius=10)
+            self.screen.blit(surf, rect.topleft)
+            
+            txt = self.font_small.render(label, True, (255, 255, 255))
+            tr = txt.get_rect(center=rect.center)
+            self.screen.blit(txt, tr)
 
         # Click-to-move hedef göstergesi
         if self.player.move_target_x is not None:
