@@ -166,6 +166,11 @@ jobs:
 
         cb = os.environ.get('GITHUB_SHA', 'dev')[:8]
         html = html.replace('<head>', '<head>' + patch, 1)
+        # Force browsers not to cache index.html
+        html = html.replace(
+            '<meta charset="UTF-8">',
+            '<meta charset="UTF-8"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">'
+        )
         html = html.replace('<body>', '<body>' + intro, 1)
         html = html.replace('Ready to start ! Please click/touch page', '')
         # Hide the default pygbag infobox so it never overlaps our overlay
