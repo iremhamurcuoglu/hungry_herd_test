@@ -194,11 +194,11 @@ class SoundManager:
         self._bg_channel = None
         self._bg_sound = None
         self._bg_volume = 0.18 if IS_WEB else 0.14
-        # Web background music is disabled to avoid persistent crackle/pop artifacts.
-        self._bg_music_enabled = not IS_WEB
+        # Background music disabled to avoid persistent crackle/pop artifacts.
+        self._bg_music_enabled = False
         self.music_enabled = True
         self._audio_unlocked = not IS_WEB
-        self._pending_music = IS_WEB and self._bg_music_enabled
+        self._pending_music = False
 
         try:
             info = pygame.mixer.get_init()

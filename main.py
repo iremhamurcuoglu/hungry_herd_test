@@ -183,12 +183,12 @@ class Game:
 
             # Global music toggle: works in instructions/tutorial/gameplay
             if event.type == pygame.KEYDOWN and event.key == pygame.K_m:
-                self.sound_manager.toggle_music()
+                self.sound_manager.toggle_sfx()
                 continue
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if self._music_toggle_rect and self._music_toggle_rect.collidepoint(event.pos):
-                    self.sound_manager.toggle_music()
+                    self.sound_manager.toggle_sfx()
                     continue
 
             if self.show_instructions:
@@ -865,11 +865,11 @@ class Game:
             msg = f"SEPET: {int(self.player.basket_timer)}s"
             self._draw_centered_text(msg, timer_y, (0, 255, 100), self.font_small)
 
-        # Müzik ve restart UI ipuçları
-        music_is_on = getattr(self.sound_manager, "music_enabled", self.sound_manager.music_playing)
-        music_icon = "♫ ON" if music_is_on else "♫ OFF"
-        music_color = (100, 255, 100) if music_is_on else (255, 100, 100)
-        self._draw_text(f"[M] {music_icon}", (10, 10), music_color, self.font_small)
+        # Ses ve restart UI ipuçları
+        sfx_is_on = self.sound_manager.enabled
+        sfx_icon = "SES ON" if sfx_is_on else "SES OFF"
+        sfx_color = (100, 255, 100) if sfx_is_on else (255, 100, 100)
+        self._draw_text(f"[M] {sfx_icon}", (10, 10), sfx_color, self.font_small)
         self._music_toggle_rect = pygame.Rect(8, 8, 130, 24)
         self._draw_text("[R] Yeniden Başlat", (10, 35), (180, 180, 180), self.font_small)
 
