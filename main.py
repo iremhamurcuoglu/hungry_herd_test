@@ -75,8 +75,8 @@ class Game:
         # On-screen UI buttons for mouse/touch
         self._init_ui_buttons()
 
-        # Tutorial: intro/outro'yu atla, direkt oyna
-        self.tutorial_active = True
+        # Tutorial devre dışı: oyun doğrudan başlasın.
+        self.tutorial_active = False
         self.tutorial_phase = "playing"  # intro'yu atla
         self.tutorial_step = 0
         self.tutorial_wait = 0.0
@@ -102,10 +102,6 @@ class Game:
             {"target": None, "action": "sell_poop", "msg": "Gübreyi sattım, para kazandım!"},
             {"target": None, "action": "done", "msg": ""},
         ]
-
-        # Edge/Web tarafında tutorial performansı tutarsızsa direkt oyuna geç.
-        if self._is_web:
-            self.tutorial_active = False
 
         # Edge/Web'de tutorial sırasında ses üretim kaynaklı frame drop'u azalt.
         self._prewarm_tutorial_audio()
@@ -693,6 +689,8 @@ class Game:
                 self.screen.blit(horse_spr, (int(horse.x - 90), int(horse.y - 55)))
 
         self.player.draw(self.screen, self.sprites)
+        # Oyuncunun konumu net görünsün.
+        pygame.draw.circle(self.screen, (255, 240, 120), (int(self.player.x), int(self.player.y)), 16, 2)
 
     def _draw_focus_screen(self):
         self.screen.fill((20, 20, 35))
@@ -1284,6 +1282,7 @@ class Game:
                 self.screen.blit(horse_spr, (int(horse.x - 90), int(horse.y - 55)))
 
         self.player.draw(self.screen, self.sprites)
+        pygame.draw.circle(self.screen, (255, 240, 120), (int(self.player.x), int(self.player.y)), 14, 2)
 
     def _draw_game_over(self):
         w, h = 600, 300
