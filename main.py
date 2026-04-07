@@ -257,13 +257,13 @@ class Game:
             dt = min(raw_dt, 0.12)
             # Tutorial'ı düşük FPS'te Safari temposuna yaklaştırmak için adaptif çarpan.
             if raw_dt > 0.055:
-                self._tutorial_time_scale = 2.4
+                self._tutorial_time_scale = 1.8
             elif raw_dt > 0.04:
-                self._tutorial_time_scale = 1.9
-            elif raw_dt > 0.03:
                 self._tutorial_time_scale = 1.5
+            elif raw_dt > 0.03:
+                self._tutorial_time_scale = 1.3
             else:
-                self._tutorial_time_scale = 1.2
+                self._tutorial_time_scale = 1.15
             self._handle_events()
             keys = pygame.key.get_pressed()
 
@@ -307,7 +307,7 @@ class Game:
             elif self.tutorial_active:
                 updates = 1
                 if raw_dt > 0.055:
-                    updates = 3
+                    updates = 2
                 elif raw_dt > 0.035:
                     updates = 2
                 step_dt = dt / updates
@@ -519,10 +519,11 @@ class Game:
                 dy = ty - self.player.y
                 dist = math.sqrt(dx*dx + dy*dy)
                 if dist > 10:
-                    # Tutorial'da çiftçi hareketini daha akıcı ve hızlı tut.
-                    speed = max(1300 * tdt, 20.0)
-                    self.player.x += (dx / dist) * speed
-                    self.player.y += (dy / dist) * speed
+                    # Çok düşük FPS'te bile zıplama olmasın diye adımı sınırla.
+                    move_amount = max(760 * tdt, 10.0)
+                    move_amount = min(move_amount, 18.0, dist)
+                    self.player.x += (dx / dist) * move_amount
+                    self.player.y += (dy / dist) * move_amount
                     return
                 else:
                     # Hedefe ulaştı, sonraki adıma geç
