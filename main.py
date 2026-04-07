@@ -1100,6 +1100,14 @@ class Game:
         # ...existing code...
 
     def _draw(self, present=True, lightweight=False):
+        if lightweight:
+            self._draw_fast_scene()
+            hud = f"SKOR {self.score}  LVL {self.level}  $ {self.player.coins}"
+            self._draw_text(hud, (12, 12), (20, 20, 20), self.font_small)
+            if present:
+                pygame.display.flip()
+            return
+
         # 0. Cached background (1 blit instead of 80+)
         if self._bg_cache is None:
             self._build_bg_cache()
@@ -1201,9 +1209,6 @@ class Game:
                 self._draw_game_over()
             elif self.shop_open:
                 self._draw_shop_popup()
-        else:
-            hud = f"SKOR {self.score}  LVL {self.level}  $ {self.player.coins}"
-            self._draw_text(hud, (12, 12), (20, 20, 20), self.font_small)
         if not lightweight:
             self._draw_interaction_prompts()
 
@@ -1212,6 +1217,32 @@ class Game:
         
         if present:
             pygame.display.flip()
+
+    def _draw_fast_scene(self):
+        """Gameplay için ultra-hafif render yolu (Web fast mode)."""
+        if self._bg_cache is None:
+            self._build_bg_cache()
+        self.screen.blit(self._bg_cache, (0, 0))
+
+        for crop in self.crops:
+            if crop.state == CropState.MATURE:
+                pygame.draw.circle(self.screen, (255, 145, 30), (int(crop.x), int(crop.y)), 9)
+            else:
+                pygame.draw.circle(self.screen, (60, 170, 70), (int(crop.x), int(crop.y)), 5)
+
+        for tree in self.apple_trees:
+            pygame.draw.rect(self.screen, (95, 70, 45), (int(tree.x - 3), int(tree.y - 7), 6, 18))
+            pygame.draw.circle(self.screen, (70, 145, 70), (int(tree.x), int(tree.y - 10)), 16)
+
+        for poop in self.poops:
+            pygame.draw.circle(self.screen, (100, 70, 20), (int(poop.x), int(poop.y)), 10)
+
+        horse_spr = self.sprites.get('horse')
+        if horse_spr:
+            for horse in self.horses:
+                self.screen.blit(horse_spr, (int(horse.x - 90), int(horse.y - 55)))
+
+        self.player.draw(self.screen, self.sprites)
 
     def _draw_game_over(self):
         w, h = 600, 300
