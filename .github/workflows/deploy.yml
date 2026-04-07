@@ -51,11 +51,92 @@ jobs:
         })();
         </script>'''
 
+        intro = '''<style>
+        #feed-herd-ready{
+          position:fixed;
+          inset:0;
+          z-index:9999;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          background:radial-gradient(circle at 20% 20%, #3a5f34 0%, #1f2f1d 50%, #10170f 100%);
+          color:#f8f1d5;
+          font-family: 'Trebuchet MS', 'Verdana', sans-serif;
+          transition:opacity .45s ease;
+        }
+        #feed-herd-ready.hidden{
+          opacity:0;
+          pointer-events:none;
+        }
+        #feed-herd-card{
+          width:min(92vw, 520px);
+          border:2px solid rgba(248,241,213,.5);
+          background:rgba(10,18,9,.58);
+          border-radius:20px;
+          padding:28px 24px;
+          text-align:center;
+          box-shadow:0 20px 50px rgba(0,0,0,.45);
+        }
+        #feed-herd-title{
+          margin:0;
+          font-size:clamp(32px, 8vw, 56px);
+          letter-spacing:2px;
+        }
+        #feed-herd-emoji{
+          margin:10px 0 14px;
+          font-size:clamp(20px, 4.5vw, 30px);
+          letter-spacing:6px;
+        }
+        #feed-herd-readyline{
+          margin:0;
+          font-size:clamp(18px, 3.7vw, 26px);
+          font-weight:700;
+        }
+        #feed-herd-note{
+          margin:10px 0 0;
+          font-size:clamp(13px, 2.9vw, 16px);
+          color:#d6e3c6;
+        }
+        </style>
+        <div id="feed-herd-ready">
+          <div id="feed-herd-card">
+            <h1 id="feed-herd-title">FEED HERD</h1>
+            <div id="feed-herd-emoji">🐴 🥕 🌾 🍎</div>
+            <p id="feed-herd-readyline">Ready to Start</p>
+            <p id="feed-herd-note">Oyun yuklenmesi biraz surebilir, lutfen bekleyin...</p>
+          </div>
+        </div>
+        <script>
+        (function(){
+          function hideOverlay(){
+            var ov=document.getElementById('feed-herd-ready');
+            if(!ov) return;
+            ov.classList.add('hidden');
+            setTimeout(function(){ if(ov&&ov.parentNode){ ov.parentNode.removeChild(ov); } }, 550);
+          }
+          function checkReady(){
+            var c=document.querySelector('canvas');
+            if(c&&c.width>100&&c.height>100){
+              hideOverlay();
+            }else{
+              setTimeout(checkReady,300);
+            }
+          }
+          if(document.readyState==='loading'){
+            document.addEventListener('DOMContentLoaded', checkReady, {once:true});
+          }else{
+            checkReady();
+          }
+          setTimeout(hideOverlay, 30000);
+        })();
+        </script>'''
+
         with open('build/web/index.html', 'r') as f:
             html = f.read()
 
         cb = os.environ.get('GITHUB_SHA', 'dev')[:8]
         html = html.replace('<head>', '<head>' + patch, 1)
+        html = html.replace('<body>', '<body>' + intro, 1)
         for src in ('hungry_herd_irem.apk', 'hungry_herd_irem.tar.gz'):
             html = html.replace(f'"{src}"', f'"{src}?v={cb}"')
             html = html.replace(f"'{src}'", f"'{src}?v={cb}'")
