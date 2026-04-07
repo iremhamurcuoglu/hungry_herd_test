@@ -304,8 +304,10 @@ class Player:
 
         length = math.sqrt(dx*dx + dy*dy)
         if length > 0:
-            self.x += (dx/length) * self.speed * dt
-            self.y += (dy/length) * self.speed * dt
+            # FPS-independent: en az 4 px/frame garanti (Edge WASM düşük FPS)
+            move_amount = max(self.speed * dt, 4.0)
+            self.x += (dx/length) * move_amount
+            self.y += (dy/length) * move_amount
             
         # Bound to screen
         self.x = max(20, min(constants.SCREEN_WIDTH - 20, self.x))

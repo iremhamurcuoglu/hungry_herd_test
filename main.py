@@ -21,7 +21,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.font_small = pygame.font.SysFont("Arial", 20, bold=True)
         self.font_large = pygame.font.SysFont("Arial", 40, bold=True)
-        self.version = "v1.8.0"
+        self.version = "v1.9.0"
         self.game_state = "LOADING"
         self.mixer_initialized = False # We stay silent
         self._loading_done = False
@@ -217,11 +217,35 @@ class Game:
 
     async def run(self):
         while True:
-            dt = self.clock.tick(60) / 1000.0
-            # Cap dt to prevent jerky movement on slow frames (Edge WASM)
-            if dt > 0.034:
-                dt = 0.034
+            raw_dt = self.clock.tick(60) / 1000.0
+            # Edge WASM'da FPS düşük olabilir (10-20 FPS)
+            # dt'yi 0.1'e cap'le ama hareketi yeterli tut
+            dt = min(raw_dt, 0.1)
             self._handle_events()
+            
+            # _held_keys fallback: event kaçırılırsa bir sonraki frame yakalar
+            if pygame.K_SPACE in self._held_keys:
+                if self.show_instructions:
+                    self.show_instructions = False
+                    self.reset_game()
+                    self.tutorial_active = True
+                    self._held_keys.discard(pygame.K_SPACE)
+                elif self.tutorial_active:
+                    if self.tutorial_phase == "intro":
+                        self.tutorial_phase = "playing"
+                        self.tutorial_step = 0
+                        self.tutorial_wait = 0.0
+                        self.tutorial_feed_count = 0
+                        self.reset_game()
+                        self.sound_manager.start_music()
+                        self._held_keys.discard(pygame.K_SPACE)
+                    elif self.tutorial_phase == "outro":
+                        self.tutorial_active = False
+                        self.sound_manager.stop_music()
+                        self.reset_game()
+                        self.sound_manager.start_music()
+                        self._held_keys.discard(pygame.K_SPACE)
+            
             if self.show_instructions:
                 self._draw_instructions()
             elif self.tutorial_active:
@@ -305,7 +329,9 @@ class Game:
                 continue
 
             if self.tutorial_active:
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                # SPACE: event-based + _held_keys fallback (Edge WASM gecikme fix)
+                space_pressed = (event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE)
+                if space_pressed:
                     if self.tutorial_phase == "intro":
                         self.tutorial_phase = "playing"
                         self.tutorial_step = 0
@@ -451,7 +477,8 @@ class Game:
                 dy = ty - self.player.y
                 dist = math.sqrt(dx*dx + dy*dy)
                 if dist > 10:
-                    speed = 400 * dt  # Fast tutorial movement
+                    # Piksel-bazlı minimum hız: en az 6 px/frame
+                    speed = max(500 * dt, 6.0)
                     self.player.x += (dx / dist) * speed
                     self.player.y += (dy / dist) * speed
                     return
