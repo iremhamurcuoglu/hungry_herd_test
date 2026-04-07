@@ -326,9 +326,14 @@ class Player:
             
             item_spr = sprites.get(item_spr_name)
             if item_spr:
-                sw, sh = item_spr.get_size()
-                scale = 25 / max(sw, sh)
-                scaled = pygame.transform.smoothscale(item_spr, (int(sw*scale), int(sh*scale)))
+                # Cache scaled inventory sprites
+                if not hasattr(self, '_inv_cache'):
+                    self._inv_cache = {}
+                if item_spr_name not in self._inv_cache:
+                    sw, sh = item_spr.get_size()
+                    scale = 25 / max(sw, sh)
+                    self._inv_cache[item_spr_name] = pygame.transform.scale(item_spr, (int(sw*scale), int(sh*scale)))
+                scaled = self._inv_cache[item_spr_name]
                 # Stack items above head
                 offset_y = -50 - (i * 20)
                 screen.blit(scaled, (int(self.x - scaled.get_width()//2), int(self.y + offset_y)))
