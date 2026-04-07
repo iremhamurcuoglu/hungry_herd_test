@@ -44,7 +44,7 @@ class Game:
 
         # Instructions ekranını atla - doğrudan tutoriale başla
         self.show_instructions = False
-        self.instructions_text = self._load_instructions()
+        self.instructions_text = self._load_instructions() if self.show_instructions else ""
         self.instructions_scroll = 0
         self._touch_last_y = None
 
@@ -103,8 +103,9 @@ class Game:
             {"target": None, "action": "done", "msg": ""},
         ]
 
-        # Edge/Web'de tutorial sırasında ses üretim kaynaklı frame drop'u azalt.
-        self._prewarm_tutorial_audio()
+        # Tutorial aktifse sesleri önceden hazırla.
+        if self.tutorial_active and (not self._web_fast_mode):
+            self._prewarm_tutorial_audio()
 
         self.reset_game()
 
@@ -345,8 +346,8 @@ class Game:
             elif event.type == pygame.KEYUP:
                 self._held_keys.discard(event.key)
 
-            # Unlock web audio on first user interaction
-            if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.FINGERDOWN):
+            # Web fast mode'da ses kapalı: unlock audio çağrısını atla.
+            if (not self._web_fast_mode) and event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.FINGERDOWN):
                 self.sound_manager.unlock_audio()
 
             # --- Mouse/Touch: buton basılı tutma (D-pad) ---
@@ -622,7 +623,8 @@ class Game:
         self.tutorial_active = False
         self.sound_manager.stop_music()
         self.reset_game()
-        self.sound_manager.start_music()
+        if not self._web_fast_mode:
+            self.sound_manager.start_music()
         self._held_keys.discard(pygame.K_SPACE)
         self._held_keys.discard(pygame.K_RETURN)
         self._held_keys.discard(pygame.K_ESCAPE)
@@ -643,7 +645,8 @@ class Game:
         self.tutorial_wait = 0.0
         self.tutorial_feed_count = 0
         self.reset_game()
-        self.sound_manager.start_music()
+        if not self._web_fast_mode:
+            self.sound_manager.start_music()
         self._held_keys.discard(pygame.K_SPACE)
         self._held_keys.discard(pygame.K_RETURN)
 
