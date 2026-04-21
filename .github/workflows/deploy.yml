@@ -33,7 +33,7 @@ jobs:
     - name: Build with pygbag
       run: |
         python -m pip install pygbag
-        python -m pygbag --build .
+        python -m pygbag --build --disable-sound-format-error .
 
     - name: Patch HTML for cross-browser support
       run: |
