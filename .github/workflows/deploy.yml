@@ -178,7 +178,7 @@ jobs:
             '/*           display: none; */',
             'display: none;'
         )
-        for src in ('hungry_herd_irem.apk', 'hungry_herd_irem.tar.gz'):
+        for src in ('hungry_herd_game.apk', 'hungry_herd_game.tar.gz'):
             html = html.replace(f'"{src}"', f'"{src}?v={cb}"')
             html = html.replace(f"'{src}'", f"'{src}?v={cb}'")
 
