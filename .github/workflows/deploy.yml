@@ -133,12 +133,24 @@ jobs:
             ov.classList.add('hidden');
             setTimeout(function(){ if(ov&&ov.parentNode){ ov.parentNode.removeChild(ov); } }, 550);
           }
+          var startTime = Date.now();
           function checkReady(){
             suppressLegacyOverlay();
-            // Python oyunundan gelen sinyali bekle
-            if(window.pygame_game_ready){
+            var c=document.querySelector('canvas');
+            var elapsed = Date.now() - startTime;
+            // Python sinyali VEYA 15sn geçtiyse canvas kontrolü
+            if(window.pygame_game_ready || (elapsed > 15000 && c && c.width >= 1024)){
               var note=document.getElementById('feed-herd-note');
               if(note){ note.style.display='none'; }
+              var card=document.getElementById('feed-herd-card');
+              if(card){
+                var notes=card.querySelectorAll('p');
+                notes.forEach(function(p){
+                  if(p.id !== 'feed-herd-readyline'){
+                    p.style.display='none';
+                  }
+                });
+              }
               var rl=document.getElementById('feed-herd-readyline');
               if(rl){ rl.style.display='block'; }
               ['click','touchstart','keydown'].forEach(function(ev){

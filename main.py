@@ -153,12 +153,16 @@ class Game:
         self.screen.blit(surf, rect)
 
     async def run(self):
-        # JavaScript'e "oyun hazır" sinyali gönder
+        # JavaScript'e "oyun hazır" sinyali gönder - pygbag uyumlu
         try:
-            import platform
-            platform.window.eval("window.pygame_game_ready = true;")
+            import js
+            js.window.pygame_game_ready = True
         except Exception:
-            pass
+            try:
+                import platform
+                platform.window.pygame_game_ready = True
+            except Exception:
+                pass
         while True:
             dt = self.clock.tick(60) / 1000.0
             self._handle_events()
