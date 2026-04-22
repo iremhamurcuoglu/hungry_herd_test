@@ -115,7 +115,8 @@ jobs:
             <div id="feed-herd-emoji">🐴 🥕 🌾 🍎</div>
             <p id="feed-herd-note">Oyun yuklenmesi biraz surebilir, lutfen bekleyin...</p>
             <p style="margin:8px 0 0;font-size:clamp(11px,2.5vw,13px);color:#b8c9a8;">! Oyuna basladiktan sonra baska sayfaya gecis yapmayiniz</p>
-            <p id="feed-herd-readyline" style="display:none;margin:12px 0 0;font-size:clamp(16px,3.5vw,22px);font-weight:700;">Ready to Start &mdash; Please click / touch page</p>
+            <p id="feed-herd-readyline" style="display:none;margin:12px 0 0;font-size:clamp(20px,4.5vw,28px);font-weight:700;color:#ffd84d;animation:pulse 1s infinite;">✨ Hazır! Başlamak için tıklayın ✨</p>
+            <style>@keyframes pulse { 0%,100% {opacity:1;} 50% {opacity:0.5;} }</style>
           </div>
         </div>
         <script>
