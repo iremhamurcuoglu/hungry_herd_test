@@ -37,6 +37,16 @@ class Game:
         self.loader = AssetsLoader(os.path.join(os.getcwd(), "assets"))
         self.sprites = self.loader.load_all()
 
+        # Fence sprite'larını explicit olarak convert_alpha ile yükle
+        try:
+            fp = pygame.image.load(os.path.join(self.loader.assets_dir, 'fence_post.png')).convert_alpha()
+            self.sprites['fence_post'] = pygame.transform.smoothscale(fp, (18, 120))
+            fr = pygame.image.load(os.path.join(self.loader.assets_dir, 'fence_rail.png')).convert_alpha()
+            self.sprites['fence_rail'] = pygame.transform.smoothscale(fr, (120, 14))
+            print("✅ Fence sprites loaded:", self.sprites.get('fence_post') is not None)
+        except Exception as e:
+            print("❌ Fence load failed:", e)
+
         # Entities
         self.player = Player()
         self.horses: List[Horse] = []
