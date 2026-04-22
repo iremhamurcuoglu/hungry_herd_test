@@ -381,8 +381,8 @@ function show_infobox() {
   }
   function checkReady(){
     suppressLegacyOverlay();
-    var c=document.querySelector('canvas');
-    if(c){
+    // Python oyunundan gelen sinyali bekle
+    if(window.pygame_game_ready){
       var note=document.getElementById('feed-herd-note');
       if(note){ note.style.display='none'; }
       var rl=document.getElementById('feed-herd-readyline');
@@ -391,7 +391,7 @@ function show_infobox() {
         document.addEventListener(ev, hideOverlay, {once:true});
       });
     }else{
-      setTimeout(checkReady,300);
+      setTimeout(checkReady,200);
     }
   }
   if(document.readyState==='loading'){
