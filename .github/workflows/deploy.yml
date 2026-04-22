@@ -82,7 +82,7 @@ jobs:
         #feed-herd-card{
           width:min(92vw, 520px);
           border:2px solid rgba(248,241,213,.5);
-          background:rgba(10,18,9,.58);
+          background:rgba(10,18,9,1);
           border-radius:20px;
           padding:28px 24px;
           text-align:center;
