@@ -781,7 +781,45 @@ class Game:
                          border_top_right_radius=50, border_bottom_right_radius=50)
         carrot_field_surf.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
         self.screen.blit(carrot_field_surf, (0, 0))
+        # Elma alanı çiti - sağ ve alt kenar, taşmadan
+        # Elma alanı çiti - sağ ve alt kenar, köşede buluşsun
+        # Elma alanı çiti - sağ ve alt kenar
+        # Elma alanı çiti - sağ (x=302) ve alt (y=748) kenar
+        post_spr = self.sprites.get('fence_post')
+        if post_spr:
+            post_w, post_h = 18, 120
+            fence_x = 302   # FARM_END(320) - post_w(18)
+            fence_y = 320   # FARM_MID_Y
+            fence_bottom = 748  # SCREEN_HEIGHT(768) - post_h(20 margin)
+
+            # Sağ dikey kenar
+            y = fence_y
+            while y < fence_bottom:
+                self.screen.blit(post_spr, (fence_x, y))
+                y += post_h + 2
+
+            # Alt yatay kenar
+            rotated_post = pygame.transform.rotate(post_spr, 90)
+            rw, rh = rotated_post.get_size()
+            x = 0
+            while x < fence_x:
+                self.screen.blit(rotated_post, (x, fence_bottom))
+                x += rh + 2
+
+        # Alan etiketleri - ortada, beyaz, silik
+        font_tiny = pygame.font.SysFont("Arial", 14)
         
+        # Havuç & Buğday alanı - ortada
+        s1 = font_tiny.render("Havuç & Buğday Alanı", True, (255, 255, 255))
+        s1.set_alpha(80)
+        self.screen.blit(s1, (160 - s1.get_width()//2, 160))
+
+        # Elma alanı - ortada
+        s2 = font_tiny.render("Elma Alanı", True, (255, 255, 255))
+        s2.set_alpha(80)
+        self.screen.blit(s2, (160 - s2.get_width()//2, 544))
+        
+
         # 3. Shop
         self._draw_text("ATLAR", (constants.HORSES_START + 10, 20), constants.COLOR_BLACK, self.font_small)
         shop_spr = self.sprites.get('shop_stall')
