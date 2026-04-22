@@ -153,6 +153,12 @@ class Game:
         self.screen.blit(surf, rect)
 
     async def run(self):
+        # JavaScript'e "oyun hazır" sinyali gönder
+        try:
+            import platform
+            platform.window.eval("window.pygame_game_ready = true;")
+        except Exception:
+            pass
         while True:
             dt = self.clock.tick(60) / 1000.0
             self._handle_events()
