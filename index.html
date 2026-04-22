@@ -354,6 +354,7 @@ function show_infobox() {
   font-size:clamp(13px, 2.9vw, 16px);
   color:#d6e3c6;
 }
+@keyframes pulse { 0%,100% {opacity:1;} 50% {opacity:0.5;} }
 </style>
 <div id="feed-herd-ready">
   <div id="feed-herd-card">
@@ -362,7 +363,6 @@ function show_infobox() {
     <p id="feed-herd-note">Oyun yuklenmesi biraz surebilir, lutfen bekleyin...</p>
     <p style="margin:8px 0 0;font-size:clamp(11px,2.5vw,13px);color:#b8c9a8;">! Oyuna basladiktan sonra baska sayfaya gecis yapmayiniz</p>
     <p id="feed-herd-readyline" style="display:none;margin:12px 0 0;font-size:clamp(20px,4.5vw,28px);font-weight:700;color:#ffd84d;animation:pulse 1s infinite;">✨ Hazır! Başlamak için tıklayın ✨</p>
-    <style>@keyframes pulse { 0%,100% {opacity:1;} 50% {opacity:0.5;} }</style>
   </div>
 </div>
 <script>
@@ -382,12 +382,11 @@ function show_infobox() {
   function checkReady(){
     suppressLegacyOverlay();
     var c=document.querySelector('canvas');
-    if(c&&c.width>100&&c.height>100){
+    if(c){
       var note=document.getElementById('feed-herd-note');
       if(note){ note.style.display='none'; }
       var rl=document.getElementById('feed-herd-readyline');
       if(rl){ rl.style.display='block'; }
-      // Don't hide overlay yet — wait for user click/touch
       ['click','touchstart','keydown'].forEach(function(ev){
         document.addEventListener(ev, hideOverlay, {once:true});
       });
