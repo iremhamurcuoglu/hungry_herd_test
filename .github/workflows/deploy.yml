@@ -136,30 +136,25 @@ jobs:
           var startTime = Date.now();
           function checkReady(){
             suppressLegacyOverlay();
-            var c=document.querySelector('canvas');
-            var elapsed = Date.now() - startTime;
-            // Python sinyali VEYA 15sn geçtiyse canvas kontrolü
-            if(window.pygame_game_ready || (elapsed > 15000 && c && c.width >= 1024)){
-              var note=document.getElementById('feed-herd-note');
-              if(note){ note.style.display='none'; }
-              var card=document.getElementById('feed-herd-card');
-              if(card){
-                var notes=card.querySelectorAll('p');
-                notes.forEach(function(p){
-                  if(p.id !== 'feed-herd-readyline'){
-                    p.style.display='none';
-                  }
-                });
-              }
-              var rl=document.getElementById('feed-herd-readyline');
-              if(rl){ rl.style.display='block'; }
-              ['click','touchstart','keydown'].forEach(function(ev){
-                document.addEventListener(ev, hideOverlay, {once:true});
-              });
-            }else{
-              setTimeout(checkReady,200);
-            }
           }
+          checkReady();
+          
+          // 30 saniye sonra "Devam Et" butonu göster
+          setTimeout(function(){
+            var card = document.getElementById('feed-herd-card');
+            if(!card) return;
+            var note = document.getElementById('feed-herd-note');
+            if(note){ note.style.display='none'; }
+            var notes = card.querySelectorAll('p');
+            notes.forEach(function(p){ p.style.display='none'; });
+            
+            var btn = document.createElement('button');
+            btn.textContent = '▶ Devam Et';
+            btn.style.cssText = 'margin-top:20px;padding:14px 32px;font-size:20px;font-weight:700;background:#ffd84d;color:#1f2f1d;border:none;border-radius:12px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.3);';
+            btn.onclick = function(){ hideOverlay(); };
+            card.appendChild(btn);
+          }, 30000);
+          
           if(document.readyState==='loading'){
             document.addEventListener('DOMContentLoaded', checkReady, {once:true});
           }else{
