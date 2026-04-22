@@ -114,6 +114,8 @@ jobs:
             <h1 id="feed-herd-title">FEED HERD</h1>
             <div id="feed-herd-emoji">🐴 🥕 🌾 🍎</div>
             <p id="feed-herd-note">Oyun yuklenmesi biraz surebilir, lutfen bekleyin...</p>
+            <p id="feed-herd-note">Oyun yuklenmesi biraz surebilir, lutfen bekleyin...</p>
+            <p style="margin:8px 0 0;font-size:clamp(11px,2.5vw,13px);color:#b8c9a8;">! Oyuna basladiktan sonra baska sayfaya gecis yapmayiniz</p>
             <p id="feed-herd-readyline" style="display:none;margin:12px 0 0;font-size:clamp(16px,3.5vw,22px);font-weight:700;">Ready to Start &mdash; Please click / touch page</p>
           </div>
         </div>

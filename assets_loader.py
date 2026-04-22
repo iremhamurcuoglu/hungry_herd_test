@@ -8,12 +8,13 @@ class AssetsLoader:
     VERSION = "1.4.0"
     
     REQUIRED_ASSETS = [
-        'horse', 'player', 'apple', 'apple_pale', 'carrot', 'carrot_pale',
-        'crop_seed', 'crop_mature', 'bg_farm_top', 'bg_farm_bottom', 'bg_grass', 
-        'bg_horses', 'shop_stall', 'apple_tree', 'agac_1', 'agac_2', 'agac_3', 'agac_4', 'agac_5', 'poop', 'trash',
-        'wheat_seed', 'wheat'
-    ]
-    
+    'horse', 'player', 'apple', 'apple_pale', 'carrot', 'carrot_pale',
+    'crop_seed', 'crop_mature', 'bg_farm_top', 'bg_farm_bottom', 'bg_grass', 
+    'bg_horses', 'shop_stall', 'apple_tree', 'agac_1', 'agac_2', 'agac_3', 'agac_4', 'agac_5', 'poop', 'trash',
+    'wheat_seed', 'wheat',
+    'fence_post', 'fence_rail'   # ← YENİ
+        ]   
+
     TARGET_SIZES = {
         'player': (36, 44),
         'carrot': (20, 24),
@@ -33,7 +34,9 @@ class AssetsLoader:
         'poop': (50, 50),
         'trash': (80, 80),
         'wheat_seed': (25, 25),
-        'wheat': (35, 45)
+        'wheat': (35, 45),
+        'fence_post': (18, 120),
+        'fence_rail': (120, 14)
     }
 
     def __init__(self, assets_dir: str):

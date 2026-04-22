@@ -273,6 +273,9 @@ class Game:
         # Her zaman crop'ları güncelle (büyüme ekranda görünsün)
         for crop in self.crops:
             crop.update(dt)
+        # Atları da güncelle (yaşam barları azalsın)
+        for horse in self.horses:
+            horse.update(dt)
 
         if self.tutorial_step >= len(self.tutorial_steps):
             return
@@ -795,26 +798,31 @@ class Game:
         # Elma alanı çiti - sağ ve alt kenar, köşede buluşsun
         # Elma alanı çiti - sağ ve alt kenar
         # Elma alanı çiti - sağ (x=302) ve alt (y=748) kenar
+        # Elma alanı çiti - sağ ve alt kenar, köşede birleşiyor
+        # Elma alanı çiti - sağ ve alt kenar, köşede birleşiyor
         post_spr = self.sprites.get('fence_post')
         if post_spr:
-            post_w, post_h = 18, 120
-            fence_x = 302   # FARM_END(320) - post_w(18)
-            fence_y = 320   # FARM_MID_Y
-            fence_bottom = 748  # SCREEN_HEIGHT(768) - post_h(20 margin)
+            pw = post_spr.get_width()
+            ph = post_spr.get_height()
+
+            fence_x = constants.FARM_END - pw
+
+            # Alt yatay kenar (döndürülmüş) - sağdan kırpılmış
+            rotated_post = pygame.transform.rotate(post_spr, 90)
+            rw = rotated_post.get_width()
+            rh = rotated_post.get_height()
+            bottom_y = constants.SCREEN_HEIGHT - rh
+
+            #x = 0
+            while x + rw <= fence_x + pw:
+                self.screen.blit(rotated_post, (x, bottom_y))
+                x += rw
 
             # Sağ dikey kenar
-            y = fence_y
-            while y < fence_bottom:
+            y = constants.FARM_MID_Y
+            while y < bottom_y + rh:
                 self.screen.blit(post_spr, (fence_x, y))
-                y += post_h + 2
-
-            # Alt yatay kenar
-            rotated_post = pygame.transform.rotate(post_spr, 90)
-            rw, rh = rotated_post.get_size()
-            x = 0
-            while x < fence_x:
-                self.screen.blit(rotated_post, (x, fence_bottom))
-                x += rh + 2
+                y += ph
 
         # Alan etiketleri - ortada, beyaz, silik
         font_tiny = pygame.font.SysFont("Arial", 14)
